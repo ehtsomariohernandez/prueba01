@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Associe le mot à l'image</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f7f7f7;
+      padding: 30px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    #timer {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #555;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 120px);
+      gap: 20px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .card {
+      background-color: white;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .card img {
+      max-width: 60px;
+      max-height: 60px;
+    }
+
+    .card.hidden {
+      visibility: hidden;
+    }
+
+    .card.correct {
+      background-color: #d4edda;
+      border-color: #28a745;
+    }
+
+    .card.incorrect {
+      background-color: #f8d7da;
+      border-color: #dc3545;
+    }
+
+    .card.selected {
+      border: 3px solid #007bff;
+      box-shadow: 0 0 10px #007bff;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Associe le mot à l'image</h1>
+  <div id="timer">Temps : 0 seconde</div>
+  <div class="grid" id="gameBoard"></div>
+
+  <!-- Audio bip -->
+  <audio id="bip-sound">
+    <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" type="audio/ogg">
+    <source src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.mp3" type="audio/mp3">
+  </audio>
+
+  <script>
+    const pairs = [
+      { type: "image", value: "🍎", id: "pomme" },
+      { type: "text", value: "pomme", id: "pomme" },
+      { type: "image", value: "🐱", id: "chat" },
+      { type: "text", value: "chat", id: "chat" },
+      { type: "image", value: "🚗", id: "voiture" },
+      { type: "text", value: "voiture", id: "voiture" }
+    ];
+
+    const gameBoard = document.getElementById("gameBoard");
+    let shuffled = pairs.sort(() => 0.5 - Math.random());
+    let selected = [];
+    let matched = 0;
+
+    // Timer
+    let seconds = 0;
+    const timerElement = document.getElementById("timer");
+    let interval = setInterval(() => {
+      seconds++;
+      timerElement.textContent = `Temps : ${seconds} seconde${seconds > 1 ? 's' : ''}`;
+    }, 1000);
+
+    const bip = document.getElementById("bip-sound");
+
+    shuffled.forEach(data => {
+      const card = document.createElement("div");
+      card.classList.add("card");
+      card.dataset.id = data.id;
+      card.dataset.type = data.type;
+      card.innerHTML = data.type === "image" ? data.value : `<strong>${data.value}</strong>`;
+      card.addEventListener("click", () => handleSelect(card));
+      gameBoard.appendChild(card);
+    });
+
+    function handleSelect(card) {
+      if (card.classList.contains("hidden") || selected.includes(card)) return;
+
+      bip.currentTime = 0;
+      bip.play();
+
+      card.classList.add("selected");
+      selected.push(card);
+
+      if (selected.length === 2) {
+        const [first, second] = selected;
+        if (
+          first.dataset.id === second.dataset.id &&
+          first.dataset.type !== second.dataset.type
+        ) {
+          // Correct match
+          first.classList.add("correct");
+          second.classList.add("correct");
+          setTimeout(() => {
+            first.classList.add("hidden");
+            second.classList.add("hidden");
+            selected = [];
+            matched++;
+            if (matched === pairs.length / 2) {
+              clearInterval(interval);
+              alert(`Bravo ! Tu as terminé en ${seconds} seconde${seconds > 1 ? 's' : ''} 🎉`);
+            }
+          }, 500);
+        } else {
+          // Incorrect match
+          first.classList.add("incorrect");
+          second.classList.add("incorrect");
+          setTimeout(() => {
+            first.classList.remove("incorrect", "selected");
+            second.classList.remove("incorrect", "selected");
+            selected = [];
+          }, 1000);
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>
